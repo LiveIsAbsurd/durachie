@@ -19,7 +19,7 @@ bot.on('message', (msg, match) => {
     }
 
     if (msg.text != '/vote') {
-        const sendTrig = Math.random() < 0.3;
+        const sendTrig = Math.random() < 0.2;
         sendTrig ? bot.sendMessage(msg.chat.id, randomMess()) : null;
     }
 })
