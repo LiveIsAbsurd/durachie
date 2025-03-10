@@ -12,7 +12,7 @@ const randomMess = () => {
 
 bot.on('message', (msg, match) => {
     if (match.type === 'text') {
-        if (!wordBase.includes(msg.text)) {
+        if (!wordBase.includes(msg.text) && msg.text != '/vote') {
             wordBase.length > 2000 ? wordBase.shift() : null;
             wordBase.push(msg.text);  
         }
