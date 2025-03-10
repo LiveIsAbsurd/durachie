@@ -1,6 +1,8 @@
 require('dotenv').config();
+
 const TelegramBot = require("node-telegram-bot-api");
 const bot = new TelegramBot(process.env.botAPI, { polling: { interval: 1000 } });
+
 const minOpt = 2;
 const maxOpt = 10;
 
@@ -19,7 +21,7 @@ bot.on('message', (msg, match) => {
     }
 
     if (msg.text != '/vote') {
-        const sendTrig = Math.random() < 0.2;
+        const sendTrig = Math.random() < 0.1;
         sendTrig ? bot.sendMessage(msg.chat.id, randomMess()) : null;
     }
 })
