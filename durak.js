@@ -32,5 +32,5 @@ bot.onText(/\/vote/, (msg) => {
         options.push(randomMess());
     }
 
-    bot.sendPoll(msg.chat.id, randomMess(), options);
+    bot.sendPoll(msg.chat.id, randomMess(), options, { is_anonymous: false });
 })
