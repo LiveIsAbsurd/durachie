@@ -54,7 +54,6 @@ bot.on('message', (msg, match) => {
 })
 
 bot.onText(/\/vote/, (msg) => {
-    console.log('ghghgh');
     const optCount = Math.floor(Math.random() * (maxOpt - minOpt + 1)) + minOpt;
     let options = [];
     
@@ -77,7 +76,5 @@ bot.onText(/\/dem/, async (msg) => {
     const imageStream = await createDemotivator(images[imageIndex], topText, bottomText);
 
     // Отправляем изображение в чат
-    await bot.sendPhoto(chatId, imageStream, {
-        caption: `Демотиватор создан с изображением №g!`
-    });
+    await bot.sendPhoto(chatId, imageStream);
 });
