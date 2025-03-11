@@ -15,26 +15,7 @@ const randomMess = () => {
    return wordBase[Math.floor(Math.random() * (wordBase.length - 1))];
 }
 
-bot.on('message', (msg, match) => {
-    let reply = msg.reply_to_message;
-
-    if (match.type === 'text') {
-        if (!wordBase.includes(msg.text) && msg.text != '/vote') {
-            wordBase.length > 2000 ? wordBase.shift() : null;
-            wordBase.push(msg.text);  
-        }
-    }
-
-    if (msg.text != '/vote') {
-        const sendTrig = reply?.from.id == "7770648727" ? true : Math.random() < 0.20;
-
-        if (sendTrig) {
-            reply?.from.id == "7770648727" ? bot.sendMessage(msg.chat.id, randomMess(), {reply_to_message_id: msg.message_id}) : bot.sendMessage(msg.chat.id, randomMess());
-        }
-    }
-})
-
-bot.on('photo', async (msg) => {
+const saveImage = (msg) => {
     const photoId = msg.photo[msg.photo.length - 1].file_id;
 
     // Получаем информацию о файле
@@ -49,7 +30,28 @@ bot.on('photo', async (msg) => {
         images.length > 50 ? images.shift() : null;
         images.push(imageBuffer);  
     }
-});
+}
+
+bot.on('message', (msg, match) => {
+    let reply = msg.reply_to_message;
+
+    if (match.type === 'text') {
+        if (!wordBase.includes(msg.text) && msg.text != '/vote') {
+            wordBase.length > 2000 ? wordBase.shift() : null;
+            wordBase.push(msg.text);  
+        }
+    } else if (match.type === 'photo') {
+        saveImage(msg);
+    }
+
+    if (msg.text != '/vote') {
+        const sendTrig = reply?.from.id == "7770648727" ? true : Math.random() < 0.20;
+
+        if (sendTrig) {
+            reply?.from.id == "7770648727" ? bot.sendMessage(msg.chat.id, randomMess(), {reply_to_message_id: msg.message_id}) : bot.sendMessage(msg.chat.id, randomMess());
+        }
+    }
+})
 
 bot.onText(/\/vote/, (msg) => {
     const optCount = Math.floor(Math.random() * (maxOpt - minOpt + 1)) + minOpt;
