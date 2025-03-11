@@ -1,4 +1,6 @@
 require('dotenv').config();
+const axios = require("axios");
+const createDemotivator = require("./functions/createDemotivator");
 
 const TelegramBot = require("node-telegram-bot-api");
 const bot = new TelegramBot(process.env.botAPI, { polling: { interval: 1000 } });
@@ -7,6 +9,7 @@ const minOpt = 2;
 const maxOpt = 10;
 
 let wordBase = [];
+let images = [];
 
 const randomMess = () => {
    return wordBase[Math.floor(Math.random() * (wordBase.length - 1))];
@@ -31,6 +34,23 @@ bot.on('message', (msg, match) => {
     }
 })
 
+bot.on('photo', async (msg) => {
+    const photoId = msg.photo[msg.photo.length - 1].file_id;
+
+    // Получаем информацию о файле
+    const fileInfo = await bot.getFile(photoId);
+    const fileUrl = `https://api.telegram.org/file/bot${bot.token}/${fileInfo.file_path}`;
+
+    // Загружаем изображение и конвертируем его в буфер
+    const response = await axios.get(fileUrl, { responseType: 'arraybuffer' });
+    const imageBuffer = Buffer.from(response.data, 'binary');
+
+    if (!images.includes(imageBuffer)) {
+        images.length > 50 ? images.shift() : null;
+        images.push(imageBuffer);  
+    }
+});
+
 bot.onText(/\/vote/, (msg) => {
     const optCount = Math.floor(Math.random() * (maxOpt - minOpt + 1)) + minOpt;
     let options = [];
@@ -41,3 +61,20 @@ bot.onText(/\/vote/, (msg) => {
 
     bot.sendPoll(msg.chat.id, randomMess(), options, { is_anonymous: false });
 })
+
+bot.onText(/\/demotivator/, async (msg, match) => {
+    const chatId = msg.chat.id;
+    const imageIndex = Math.floor(Math.random() * images.length);
+
+    // Пример текста для демотиватора
+    const topText = randomMess();
+    const bottomText = randomMess();
+
+    // Создаем демотиватор и получаем поток с изображением
+    const imageStream = await createDemotivator(images[imageIndex], topText, bottomText);
+
+    // Отправляем изображение в чат
+    await bot.sendPhoto(chatId, imageStream, {
+        caption: `Демотиватор создан с изображением №g!`
+    });
+});
