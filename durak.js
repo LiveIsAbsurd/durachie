@@ -33,7 +33,6 @@ const saveImage = async (msg) => {
 }
 
 bot.on('message', (msg, match) => {
-    console.log('ghghgh');
     let reply = msg.reply_to_message;
 
     if (match.type === 'text') {
@@ -55,6 +54,7 @@ bot.on('message', (msg, match) => {
 })
 
 bot.onText(/\/vote/, (msg) => {
+    console.log('ghghgh');
     const optCount = Math.floor(Math.random() * (maxOpt - minOpt + 1)) + minOpt;
     let options = [];
     
