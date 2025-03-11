@@ -26,7 +26,10 @@ const saveImage = async (msg) => {
     const response = await axios.get(fileUrl, { responseType: 'arraybuffer' });
     const imageBuffer = Buffer.from(response.data, 'binary');
 
-    return imageBuffer;
+    if (!images.includes(imageBuffer)) {
+        images.length > 50 ? images.shift() : null;
+        images.push(imageBuffer);  
+    }
 }
 
 bot.on('message', (msg, match) => {
@@ -38,10 +41,7 @@ bot.on('message', (msg, match) => {
             wordBase.push(msg.text);  
         }
     } else if (match.type === 'photo') {
-        if (!images.includes(imageBuffer)) {
-            images.length > 50 ? images.shift() : null;
-            images.push(imageBuffer);  
-        }
+        saveImage(msg);
     }
 
     if (msg.text != '/vote') {
