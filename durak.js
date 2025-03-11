@@ -15,25 +15,21 @@ const randomMess = () => {
    return wordBase[Math.floor(Math.random() * (wordBase.length - 1))];
 }
 
-// const saveImage = async (msg) => {
-//     const photoId = msg.photo[msg.photo.length - 1].file_id;
+const saveImage = async (msg) => {
+    const photoId = msg.photo[msg.photo.length - 1].file_id;
 
-//     // Получаем информацию о файле
-//     const fileInfo = await bot.getFile(photoId);
-//     const fileUrl = `https://api.telegram.org/file/bot${bot.token}/${fileInfo.file_path}`;
+    // Получаем информацию о файле
+    const fileInfo = await bot.getFile(photoId);
+    const fileUrl = `https://api.telegram.org/file/bot${bot.token}/${fileInfo.file_path}`;
 
-//     // Загружаем изображение и конвертируем его в буфер
-//     const response = await axios.get(fileUrl, { responseType: 'arraybuffer' });
-//     const imageBuffer = Buffer.from(response.data, 'binary');
+    // Загружаем изображение и конвертируем его в буфер
+    const response = await axios.get(fileUrl, { responseType: 'arraybuffer' });
+    const imageBuffer = Buffer.from(response.data, 'binary');
 
-//     if (!images.includes(imageBuffer)) {
-//         images.length > 50 ? images.shift() : null;
-//         images.push(imageBuffer);  
-//     }
-// }
+    return imageBuffer;
+}
 
 bot.on('message', (msg, match) => {
-    console.log('текст');
     let reply = msg.reply_to_message;
 
     if (match.type === 'text') {
@@ -42,7 +38,10 @@ bot.on('message', (msg, match) => {
             wordBase.push(msg.text);  
         }
     } else if (match.type === 'photo') {
-        saveImage(msg);
+        if (!images.includes(imageBuffer)) {
+            images.length > 50 ? images.shift() : null;
+            images.push(imageBuffer);  
+        }
     }
 
     if (msg.text != '/vote') {
@@ -66,7 +65,7 @@ bot.onText(/\/vote/, (msg) => {
     bot.sendPoll(msg.chat.id, randomMess(), options, { is_anonymous: false });
 })
 
-bot.onText(/\/demotivator/, async (msg) => {
+bot.onText(/\/dem/, async (msg) => {
     const chatId = msg.chat.id;
     const imageIndex = Math.floor(Math.random() * images.length);
 
