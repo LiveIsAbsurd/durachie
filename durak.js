@@ -36,7 +36,7 @@ bot.on('message', (msg, match) => {
     let reply = msg.reply_to_message;
 
     if (match.type === 'text') {
-        if (!wordBase.includes(msg.text) && msg.text != '/vote') {
+        if (!wordBase.includes(msg.text) && msg.text != '/vote' && msg.text != '/dem') {
             wordBase.length > 2000 ? wordBase.shift() : null;
             wordBase.push(msg.text);  
         }
