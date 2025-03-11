@@ -62,7 +62,7 @@ bot.onText(/\/vote/, (msg) => {
     bot.sendPoll(msg.chat.id, randomMess(), options, { is_anonymous: false });
 })
 
-bot.onText(/\/demotivator/, async (msg, match) => {
+bot.onText(/\/demotivator/, async (msg) => {
     const chatId = msg.chat.id;
     const imageIndex = Math.floor(Math.random() * images.length);
 
