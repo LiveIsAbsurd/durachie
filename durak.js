@@ -13,6 +13,8 @@ const randomMess = () => {
 }
 
 bot.on('message', (msg, match) => {
+    let reply = msg.reply_to_message;
+
     if (match.type === 'text') {
         if (!wordBase.includes(msg.text) && msg.text != '/vote') {
             wordBase.length > 2000 ? wordBase.shift() : null;
@@ -21,8 +23,10 @@ bot.on('message', (msg, match) => {
     }
 
     if (msg.text != '/vote') {
-        const sendTrig = Math.random() < 0.20;
-        sendTrig ? bot.sendMessage(msg.chat.id, randomMess()) : null;
+        const sendTrig = reply ? true : Math.random() < 0.20;
+        sendTrig ?
+            bot.sendMessage(msg.chat.id, randomMess(), reply ? {reply_to_message_id: msg.message_id} : null) : 
+            null;
     }
 })
 
