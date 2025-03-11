@@ -33,6 +33,7 @@ const saveImage = async (msg) => {
 }
 
 bot.on('message', (msg, match) => {
+    console.log('ghghgh');
     let reply = msg.reply_to_message;
 
     if (match.type === 'text') {
