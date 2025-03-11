@@ -15,7 +15,7 @@ const randomMess = () => {
    return wordBase[Math.floor(Math.random() * (wordBase.length - 1))];
 }
 
-const saveImage = (msg) => {
+const saveImage = async (msg) => {
     const photoId = msg.photo[msg.photo.length - 1].file_id;
 
     // Получаем информацию о файле
