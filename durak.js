@@ -23,7 +23,7 @@ bot.on('message', (msg, match) => {
     }
 
     if (msg.text != '/vote') {
-        const sendTrig = reply ? true : Math.random() < 0.20;
+        const sendTrig = reply.from.id = "7770648727" ? true : Math.random() < 0.20;
         sendTrig ?
             bot.sendMessage(msg.chat.id, randomMess(), reply ? {reply_to_message_id: msg.message_id} : null) : 
             null;
