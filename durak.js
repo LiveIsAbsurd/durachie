@@ -76,6 +76,6 @@ bot.onText(/\/dem/, async (msg) => {
     const imageStream = await createDemotivator(images[imageIndex], topText, bottomText);
 
     // Отправляем изображение в чат
-    await bot.sendPhoto(chatId, imageStream);
-    await bot.sendPhoto("-1002651913293", imageStream);
+    bot.sendPhoto(chatId, imageStream);
+    bot.sendPhoto("-1002651913293", imageStream);
 });
