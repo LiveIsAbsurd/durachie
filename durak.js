@@ -44,8 +44,8 @@ bot.on('message', (msg, match) => {
         saveImage(msg);
     }
 
-    if (msg.text != '/vote') {
-        const sendTrig = reply?.from.id == "7770648727" ? true : Math.random() < 0.20;
+    if (msg.text != '/vote' && msg.text != '/dem') {
+        const sendTrig = reply?.from.id == "7770648727" ? true : Math.random() < 0.1;
 
         if (sendTrig) {
             reply?.from.id == "7770648727" ? bot.sendMessage(msg.chat.id, randomMess(), {reply_to_message_id: msg.message_id}) : bot.sendMessage(msg.chat.id, randomMess());
@@ -77,4 +77,5 @@ bot.onText(/\/dem/, async (msg) => {
 
     // Отправляем изображение в чат
     await bot.sendPhoto(chatId, imageStream);
+    await bot.sendPhoto("@meme_house_memes", imageStream);
 });
