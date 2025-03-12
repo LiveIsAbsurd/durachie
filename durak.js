@@ -8,7 +8,7 @@ const bot = new TelegramBot(process.env.botAPI, { polling: { interval: 1000 } })
 const minOpt = 2;
 const maxOpt = 10;
 
-let wordBase = [];
+let wordBase = ["Подписывайтесь на канал https://t.me/meme_house_memes"];
 let images = [];
 
 const randomMess = () => {
@@ -27,7 +27,7 @@ const saveImage = async (msg) => {
     const imageBuffer = Buffer.from(response.data, 'binary');
 
     if (!images.includes(imageBuffer)) {
-        images.length > 50 ? images.shift() : null;
+        images.length > 75 ? images.shift() : null;
         images.push(imageBuffer);  
     }
 }
@@ -78,4 +78,8 @@ bot.onText(/\/dem/, async (msg) => {
     // Отправляем изображение в чат
     bot.sendPhoto(chatId, imageStream);
     bot.sendPhoto("-1002651913293", imageStream);
+
+    if (Match.random() < 0.1) {
+        images.push(imageStream);
+    }
 });
