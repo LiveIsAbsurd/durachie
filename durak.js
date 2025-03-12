@@ -77,5 +77,5 @@ bot.onText(/\/dem/, async (msg) => {
 
     // Отправляем изображение в чат
     await bot.sendPhoto(chatId, imageStream);
-    await bot.sendPhoto("@meme_house_memes", imageStream);
+    await bot.sendPhoto("-1002651913293", imageStream);
 });
