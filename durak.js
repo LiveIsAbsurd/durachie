@@ -1,35 +1,19 @@
 require('dotenv').config();
-const axios = require("axios");
-const createDemotivator = require("./functions/createDemotivator");
-
+const fs = require("fs");
 const TelegramBot = require("node-telegram-bot-api");
+const createDemotivator = require("./functions/createDemotivator");
+const saveImage = require("./functions/saveImage");
+
 const bot = new TelegramBot(process.env.botAPI, { polling: { interval: 1000 } });
+
+let wordBase = JSON.parse(fs.readFileSync("../durakBase/wordBase.json", "UTF-8"));
+let images = [];
 
 const minOpt = 2;
 const maxOpt = 10;
 
-let wordBase = ["Подписывайтесь на канал https://t.me/meme_house_memes"];
-let images = [];
-
 const randomMess = () => {
-   return wordBase[Math.floor(Math.random() * (wordBase.length - 1))];
-}
-
-const saveImage = async (msg) => {
-    const photoId = msg.photo[msg.photo.length - 1].file_id;
-
-    // Получаем информацию о файле
-    const fileInfo = await bot.getFile(photoId);
-    const fileUrl = `https://api.telegram.org/file/bot${bot.token}/${fileInfo.file_path}`;
-
-    // Загружаем изображение и конвертируем его в буфер
-    const response = await axios.get(fileUrl, { responseType: 'arraybuffer' });
-    const imageBuffer = Buffer.from(response.data, 'binary');
-
-    if (!images.includes(imageBuffer)) {
-        images.length > 75 ? images.shift() : null;
-        images.push(imageBuffer);  
-    }
+   return wordBase[Math.floor(Math.random() * wordBase.length)];
 }
 
 bot.on('message', (msg, match) => {
@@ -41,7 +25,7 @@ bot.on('message', (msg, match) => {
             wordBase.push(msg.text);  
         }
     } else if (match.type === 'photo') {
-        saveImage(msg);
+        saveImage(msg, bot, images);
     }
 
     if (msg.text != '/vote' && msg.text != '/dem') {
@@ -66,7 +50,8 @@ bot.onText(/\/vote/, (msg) => {
 
 bot.onText(/\/dem/, async (msg) => {
     const chatId = msg.chat.id;
-    const imageIndex = Math.floor(Math.random() * (images.length - 1));
+    const imageIndex = Math.floor(Math.random() * images.length);
+    console.log(imageIndex);
 
     // Пример текста для демотиватора
     const topText = randomMess();
@@ -79,7 +64,18 @@ bot.onText(/\/dem/, async (msg) => {
     bot.sendPhoto(chatId, imageStream);
     bot.sendPhoto("-1002651913293", imageStream);
 
-    if (Match.random() < 0.1) {
+    if (Math.random() < 0.1) {
+        images.length > 2000 ? images.shift() : null;
         images.push(imageStream);
     }
 });
+
+process.on("SIGINT", async () => {
+    fs.writeFileSync("../durakBase/wordBase.json", JSON.stringify(wordBase), "UTF-8", (err) => {
+        if (err) {
+          console.log(err);
+        }
+      });
+
+    process.exit(0);
+})
