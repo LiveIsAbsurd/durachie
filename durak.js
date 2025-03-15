@@ -27,12 +27,12 @@ bot.on('message', (msg, match) => {
             wordBase.length > 2000 ? wordBase.shift() : null;
             wordBase.push(msg.text);  
         }
-        
+
     } else if (match.type === 'photo') {
         saveImage(msg, bot, images);
     }
 
-    if (msg.text != '/vote' && msg.text != '/dem') {
+    if (msg.text[0] != '/') {
         const sendTrig = reply?.from.id == "7770648727" ? true : Math.random() < 0.1;
 
         if (sendTrig) {
