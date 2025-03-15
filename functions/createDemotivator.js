@@ -12,8 +12,6 @@ async function createDemotivator(imagePath, topText, bottomText) {
     ctx.fillStyle = '#000000';
     ctx.fillRect(0, 0, width, height);
 
-    
-
     // Загружаем изображение
     const image = await loadImage(imagePath);
     const imgWidth = 600;
@@ -46,8 +44,6 @@ async function createDemotivator(imagePath, topText, bottomText) {
     // Рисуем нижний текст
     ctx.font = '20px Lobster';
     ctx.fillText(bottomText, width / 2, imgY + imgHeight + 110);
-
-    
 
     // Отступы между картинкой и рамкой
     const padding = 3; // Можно настроить размер отступа
