@@ -21,9 +21,9 @@ bot.on('message', (msg, match) => {
 
     if (match.type === 'text') {
 
-        if (msg.text[0] == '!' || msg.text[0] == '/' || wordBase.includes(msg.text)) {
+        if (msg.text[0] == '!' || msg.text[0] == '/') {
             return
-        } else {
+        } else if (!wordBase.includes(msg.text)) {
             wordBase.length > 2000 ? wordBase.shift() : null;
             wordBase.push(msg.text);  
         }
