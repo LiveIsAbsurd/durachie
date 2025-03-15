@@ -52,12 +52,6 @@ async function createDemotivator(imagePath, topText, bottomText) {
     // Отступы между картинкой и рамкой
     const padding = 3; // Можно настроить размер отступа
 
-    // Рисуем белую рамку с отступами
-    // ctx.fillStyle = '#FFFFFF';
-    // ctx.beginPath();
-    // ctx.rect(imgX + padding, imgY + padding, imgWidth - 2 * padding, imgHeight - 2 * padding);
-    // ctx.stroke();
-
     // Возвращаем поток с изображением
     return canvas.createPNGStream();
 }

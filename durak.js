@@ -21,12 +21,13 @@ bot.on('message', (msg, match) => {
 
     if (match.type === 'text') {
 
-        if (msg.text[0] == '!') {
+        if (msg.text[0] == '!' || msg.text[0] == '/' || wordBase.includes(msg.text)) {
             return
-        } else if (!wordBase.includes(msg.text) && msg.text != '/vote' && msg.text != '/dem' && msg.text[0] != '!') {
+        } else {
             wordBase.length > 2000 ? wordBase.shift() : null;
             wordBase.push(msg.text);  
         }
+        
     } else if (match.type === 'photo') {
         saveImage(msg, bot, images);
     }
