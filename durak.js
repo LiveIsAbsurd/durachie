@@ -31,9 +31,11 @@ bot.on('message', (msg, match) => {
 
     } else if (match.type === 'photo') {
         saveImage(msg, bot, images);
+    } else {
+        return;
     }
 
-    if (match.type != 'photo' && msg.text[0] != '/') {
+    if (match.type == 'text' && msg.text[0] != '/') {
         const replyBot = reply?.from.id == "7770648727"
         // const replyBot = reply?.from.id == "7739320318"
         const sendTrig = replyBot || Math.random() < 0.1;
