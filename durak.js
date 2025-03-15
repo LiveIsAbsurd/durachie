@@ -17,6 +17,7 @@ const randomMess = () => {
 }
 
 bot.on('message', (msg, match) => {
+    console.log('Текст');
     let reply = msg.reply_to_message;
 
     if (match.type === 'text') {
