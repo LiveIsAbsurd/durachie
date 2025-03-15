@@ -18,7 +18,6 @@ const randomMess = () => {
 
 bot.on('message', (msg, match) => {
     let reply = msg.reply_to_message;
-    console.log(`Reply: ${reply}`);
 
     if (match.type === 'text') {
 
@@ -35,9 +34,8 @@ bot.on('message', (msg, match) => {
 
     if (msg.text[0] != '/') {
         const replyBot = reply?.from.id == "7770648727"
-        const sendTrig = replyBot || Math.random() < 0.1;
-        console.log(`replyBot: ${replyBot}`);
-        console.log(`sendTrig: ${sendTrig}`);
+        const sendTrig = replyBot ? true : Math.random() < 0.1;
+        console.log(replyBot + ' ' + sendTrig);
 
         if (sendTrig) {
             replyBot ? bot.sendMessage(msg.chat.id, randomMess(), {reply_to_message_id: msg.message_id}) : bot.sendMessage(msg.chat.id, randomMess());
