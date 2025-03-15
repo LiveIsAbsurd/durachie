@@ -33,10 +33,11 @@ bot.on('message', (msg, match) => {
     }
 
     if (msg.text[0] != '/') {
-        const sendTrig = reply?.from.id == "7770648727" ? true : Math.random() < 0.1;
+        const replyBot = reply?.from.id == "7770648727"
+        const sendTrig = replyBot ? true : Math.random() < 0.1;
 
         if (sendTrig) {
-            reply?.from.id == "7770648727" ? bot.sendMessage(msg.chat.id, randomMess(), {reply_to_message_id: msg.message_id}) : bot.sendMessage(msg.chat.id, randomMess());
+            replyBot ? bot.sendMessage(msg.chat.id, randomMess(), {reply_to_message_id: msg.message_id}) : bot.sendMessage(msg.chat.id, randomMess());
         }
     }
 })
@@ -55,7 +56,6 @@ bot.onText(/\/vote/, (msg) => {
 bot.onText(/\/dem/, async (msg) => {
     const chatId = msg.chat.id;
     const imageIndex = Math.floor(Math.random() * images.length);
-    console.log(imageIndex);
 
     // Пример текста для демотиватора
     const topText = randomMess();
