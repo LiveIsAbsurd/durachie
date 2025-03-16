@@ -3,10 +3,12 @@ const fs = require("fs");
 const TelegramBot = require("node-telegram-bot-api");
 const createDemotivator = require("./functions/createDemotivator");
 const saveImage = require("./functions/saveImage");
+const sendToChanel = require("./functions/sendToChannel");
 
 const bot = new TelegramBot(process.env.botAPI, { polling: { interval: 1000 } });
 
 let wordBase = JSON.parse(fs.readFileSync("../durakBase/wordBase.json", "UTF-8"));
+let jokeBase = JSON.parse(fs.readFileSync('../durakBase/jokeBase.json', "UTF-8"),null, 2);
 let images = [];
 
 const minOpt = 2;
@@ -17,7 +19,6 @@ const randomMess = () => {
 }
 
 bot.on('message', (msg, match) => {
-    console.log('Текст');
     let reply = msg.reply_to_message;
 
     if (match.type === 'text') {
@@ -36,10 +37,8 @@ bot.on('message', (msg, match) => {
     }
 
     if (match.type == 'text' && msg.text[0] != '/') {
-        const replyBot = reply?.from.id == "7770648727"
-        // const replyBot = reply?.from.id == "7739320318"
+        const replyBot = reply?.from.id == "7770648727";
         const sendTrig = replyBot || Math.random() < 0.1;
-        console.log(reply?.from.id + ' ' + sendTrig);
 
         if (sendTrig) {
             replyBot ? bot.sendMessage(msg.chat.id, randomMess(), {reply_to_message_id: msg.message_id}) : bot.sendMessage(msg.chat.id, randomMess());
@@ -71,12 +70,39 @@ bot.onText(/\/dem/, async (msg) => {
 
     // Отправляем изображение в чат
     bot.sendPhoto(chatId, imageStream);
-    bot.sendPhoto("-1002651913293", imageStream);
+    sendToChanel(bot, process.env.chanelId, null, imageStream);
 
     if (Math.random() < 0.1) {
         images.length > 2000 ? images.shift() : null;
         images.push(imageStream);
     }
+});
+
+bot.onText(/\/joke/, (msg) => {
+    let text = jokeBase[Math.floor(Math.random() * jokeBase.length)];
+    while (text.includes("joke")) {
+        text = text.replace("joke", randomMess());
+    }
+
+    bot.sendMessage(msg.chat.id, text);
+    sendToChanel(bot, process.env.chanelId, text, null);
+});
+
+bot.onText(/\/addJoke/, (msg) => {
+    if (msg.from.id != "261749882") {
+        return;
+    }
+
+    let text = msg.text.replace('/addJoke', "");
+
+    jokeBase.push(text);
+
+    fs.writeFileSync('../durakBase/jokeBase.json', JSON.stringify(jokeBase, null, 2), "UTF-8", (err) => {
+        if (err) {
+            console.log(err);
+        }
+    });
+
 });
 
 process.on("SIGINT", async () => {
