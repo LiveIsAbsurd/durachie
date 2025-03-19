@@ -105,6 +105,13 @@ bot.onText(/\/addJoke/, (msg) => {
 
 });
 
+bot.onText(/\/reg/, (msg) => {
+    let newBase = {[msg.chat.id]: wordBase};
+
+    wordBase = newBase;
+    console.log(wordBase[msg.chat.id]);
+})
+
 process.on("SIGINT", async () => {
     fs.writeFileSync("../durakBase/wordBase.json", JSON.stringify(wordBase), "UTF-8", (err) => {
         if (err) {
