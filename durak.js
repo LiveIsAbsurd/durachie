@@ -61,6 +61,11 @@ bot.onText(/\/vote/, (msg) => {
 
 bot.onText(/\/dem/, async (msg) => {
     const chatId = msg.chat.id;
+
+    if (!images[msg.chat.id]) {
+        return;
+    }
+
     const imageIndex = Math.floor(Math.random() * images[msg.chat.id].length);
     console.log(images[msg.chat.id])
 
