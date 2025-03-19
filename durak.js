@@ -82,11 +82,6 @@ bot.onText(/\/dem/, async (msg) => {
             sendToChanel(bot, process.env.chanelId, null, imageStream);
         }
 
-        // Обновление массива изображений
-        if (Math.random() < 0.1 && images[msg.chat.id].length > 75) {
-            images[msg.chat.id].shift();
-        }
-        images[msg.chat.id].push(imageStream);
     } catch (error) {
         console.error("Ошибка при выполнении команды /dem:", error);
         bot.sendMessage(chatId, "Произошла ошибка при создании демотиватора :(");
