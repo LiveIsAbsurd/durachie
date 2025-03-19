@@ -9,7 +9,7 @@ const bot = new TelegramBot(process.env.botAPI, { polling: { interval: 1000 } })
 
 let wordBase = JSON.parse(fs.readFileSync("../durakBase/wordBase.json", "UTF-8"));
 let jokeBase = JSON.parse(fs.readFileSync('../durakBase/jokeBase.json', "UTF-8"),null, 2);
-let images = JSON.parse(fs.readFileSync("../durakBase/imageBase.json", "UTF-8"));
+let images = {};
 
 const minOpt = 2;
 const maxOpt = 10;
@@ -116,12 +116,6 @@ bot.onText(/\/addJoke/, (msg) => {
 
 process.on("SIGINT", async () => {
     fs.writeFileSync("../durakBase/wordBase.json", JSON.stringify(wordBase), "UTF-8", (err) => {
-        if (err) {
-            console.log(err);
-        }
-    });
-    
-    fs.writeFileSync("../durakBase/imageBase.json", JSON.stringify(images), "UTF-8", (err) => {
         if (err) {
             console.log(err);
         }
