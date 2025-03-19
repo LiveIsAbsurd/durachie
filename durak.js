@@ -61,29 +61,35 @@ bot.onText(/\/vote/, (msg) => {
 
 bot.onText(/\/dem/, async (msg) => {
     const chatId = msg.chat.id;
-    console.log(images[msg.chat.id])
 
     if (!images[msg.chat.id]) {
         return;
     }
 
-    const imageIndex = Math.floor(Math.random() * images[msg.chat.id].length);
-    
+    try {
+        const imageIndex = Math.floor(Math.random() * images[msg.chat.id].length);
+        const topText = randomMess(msg.chat.id);
+        const bottomText = randomMess(msg.chat.id);
 
-    // Пример текста для демотиватора
-    const topText = randomMess(msg.chat.id);
-    const bottomText = randomMess(msg.chat.id);
+        // Создание демотиватора
+        const imageStream = await createDemotivator(images[msg.chat.id][imageIndex], topText, bottomText);
 
-    // Создаем демотиватор и получаем поток с изображением
-    const imageStream = await createDemotivator(images[msg.chat.id][imageIndex], topText, bottomText);
+        // Отправка изображения
+        await bot.sendPhoto(chatId, imageStream);
 
-    // Отправляем изображение в чат
-    bot.sendPhoto(chatId, imageStream);
-    msg.chat.id == "-1001807749316" ? sendToChanel(bot, process.env.chanelId, null, imageStream) : null;
+        // Отправка в канал, если необходимо
+        if (msg.chat.id == "-1001807749316") {
+            await sendToChanel(bot, process.env.chanelId, null, imageStream);
+        }
 
-    if (Math.random() < 0.1) {
-        images[msg.chat.id].length > 75 ? images[msg.chat.id].shift() : null;
+        // Обновление массива изображений
+        if (Math.random() < 0.1 && images[msg.chat.id].length > 75) {
+            images[msg.chat.id].shift();
+        }
         images[msg.chat.id].push(imageStream);
+    } catch (error) {
+        console.error("Ошибка при выполнении команды /dem:", error);
+        bot.sendMessage(chatId, "Произошла ошибка при создании демотиватора :(");
     }
 });
 
