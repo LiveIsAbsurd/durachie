@@ -62,6 +62,7 @@ bot.onText(/\/vote/, (msg) => {
 bot.onText(/\/dem/, async (msg) => {
     const chatId = msg.chat.id;
     const imageIndex = Math.floor(Math.random() * images[msg.chat.id].length);
+    console.log(images[msg.chat.id])
 
     // Пример текста для демотиватора
     const topText = randomMess(msg.chat.id);
