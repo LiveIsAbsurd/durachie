@@ -9,7 +9,7 @@ const bot = new TelegramBot(process.env.botAPI, { polling: { interval: 1000 } })
 
 let wordBase = JSON.parse(fs.readFileSync("../durakBase/wordBase.json", "UTF-8"));
 let jokeBase = JSON.parse(fs.readFileSync('../durakBase/jokeBase.json', "UTF-8"),null, 2);
-let images = {};
+let images = JSON.parse(fs.readFileSync("../durakBase/imageBase.json", "UTF-8"));
 
 const minOpt = 2;
 const maxOpt = 10;
@@ -22,7 +22,6 @@ bot.on('message', (msg, match) => {
     let reply = msg.reply_to_message;
 
     !wordBase[msg.chat.id] ? wordBase[msg.chat.id] = [] : null;
-    console.log(!wordBase[msg.chat.id]);
 
     if (match.type === 'text') {
 
