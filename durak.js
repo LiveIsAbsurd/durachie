@@ -21,6 +21,8 @@ const randomMess = (id) => {
 bot.on('message', (msg, match) => {
     let reply = msg.reply_to_message;
 
+    !wordBase[msg.chat.id] ? wordBase[msg.chat.id] = [] : null;
+
     if (match.type === 'text') {
 
         if (msg.text[0] == '!' || msg.text[0] == '/') {
