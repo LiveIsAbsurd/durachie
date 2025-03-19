@@ -9,13 +9,13 @@ const bot = new TelegramBot(process.env.botAPI, { polling: { interval: 1000 } })
 
 let wordBase = JSON.parse(fs.readFileSync("../durakBase/wordBase.json", "UTF-8"));
 let jokeBase = JSON.parse(fs.readFileSync('../durakBase/jokeBase.json', "UTF-8"),null, 2);
-let images = [];
+let images = {};
 
 const minOpt = 2;
 const maxOpt = 10;
 
-const randomMess = () => {
-   return wordBase[Math.floor(Math.random() * wordBase.length)];
+const randomMess = (id) => {
+   return wordBase[id][Math.floor(Math.random() * wordBase[id].length)];
 }
 
 bot.on('message', (msg, match) => {
@@ -25,9 +25,9 @@ bot.on('message', (msg, match) => {
 
         if (msg.text[0] == '!' || msg.text[0] == '/') {
             return
-        } else if (!wordBase.includes(msg.text)) {
-            wordBase.length > 2000 ? wordBase.shift() : null;
-            wordBase.push(msg.text);  
+        } else if (!wordBase[msg.chat.id].includes(msg.text)) {
+            wordBase[msg.chat.id].length > 2000 ? wordBase[msg.chat.id].shift() : null;
+            wordBase[msg.chat.id].push(msg.text);  
         }
 
     } else if (match.type === 'photo') {
@@ -41,7 +41,7 @@ bot.on('message', (msg, match) => {
         const sendTrig = replyBot || Math.random() < 0.1;
 
         if (sendTrig) {
-            replyBot ? bot.sendMessage(msg.chat.id, randomMess(), {reply_to_message_id: msg.message_id}) : bot.sendMessage(msg.chat.id, randomMess());
+            replyBot ? bot.sendMessage(msg.chat.id, randomMess(msg.chat.id), {reply_to_message_id: msg.message_id}) : bot.sendMessage(msg.chat.id, randomMess(msg.chat.id));
         }
     }
 })
@@ -51,41 +51,41 @@ bot.onText(/\/vote/, (msg) => {
     let options = [];
     
     for (let i = 0; i < optCount; i++) {
-        options.push(randomMess());
+        options.push(randomMess(msg.chat.id));
     }
 
-    bot.sendPoll(msg.chat.id, randomMess(), options, { is_anonymous: false });
+    bot.sendPoll(msg.chat.id, randomMess(msg.chat.id), options, { is_anonymous: false });
 })
 
 bot.onText(/\/dem/, async (msg) => {
     const chatId = msg.chat.id;
-    const imageIndex = Math.floor(Math.random() * images.length);
+    const imageIndex = Math.floor(Math.random() * images[msg.chat.id].length);
 
     // Пример текста для демотиватора
-    const topText = randomMess();
-    const bottomText = randomMess();
+    const topText = randomMess(msg.chat.id);
+    const bottomText = randomMess(msg.chat.id);
 
     // Создаем демотиватор и получаем поток с изображением
-    const imageStream = await createDemotivator(images[imageIndex], topText, bottomText);
+    const imageStream = await createDemotivator(images[msg.chat.id][imageIndex], topText, bottomText);
 
     // Отправляем изображение в чат
     bot.sendPhoto(chatId, imageStream);
-    sendToChanel(bot, process.env.chanelId, null, imageStream);
+    msg.chat.id == "-1001807749316" ? sendToChanel(bot, process.env.chanelId, null, imageStream) : null;
 
     if (Math.random() < 0.1) {
-        images.length > 2000 ? images.shift() : null;
-        images.push(imageStream);
+        images[msg.chat.id].length > 2000 ? images[msg.chat.id].shift() : null;
+        images[msg.chat.id].push(imageStream);
     }
 });
 
 bot.onText(/\/joke/, (msg) => {
     let text = jokeBase[Math.floor(Math.random() * jokeBase.length)];
     while (text.includes("joke")) {
-        text = text.replace("joke", randomMess());
+        text = text.replace("joke", randomMess(msg.chat.id));
     }
 
     bot.sendMessage(msg.chat.id, text);
-    sendToChanel(bot, process.env.chanelId, text, null);
+    msg.chat.id == "-1001807749316" ? sendToChanel(bot, process.env.chanelId, text, null) : null;
 });
 
 bot.onText(/\/addJoke/, (msg) => {
@@ -105,19 +105,18 @@ bot.onText(/\/addJoke/, (msg) => {
 
 });
 
-bot.onText(/\/reg/, (msg) => {
-    let newBase = {[msg.chat.id]: wordBase};
-
-    wordBase = newBase;
-    console.log(wordBase[msg.chat.id]);
-})
-
 process.on("SIGINT", async () => {
     fs.writeFileSync("../durakBase/wordBase.json", JSON.stringify(wordBase), "UTF-8", (err) => {
         if (err) {
-          console.log(err);
+            console.log(err);
         }
-      });
+    });
+    
+    fs.writeFileSync("../durakBase/imageBase.json", JSON.stringify(images), "UTF-8", (err) => {
+        if (err) {
+            console.log(err);
+        }
+    });
 
     process.exit(0);
 })

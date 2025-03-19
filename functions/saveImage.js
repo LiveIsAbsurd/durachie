@@ -11,9 +11,9 @@ const saveImage = async (msg, bot, images) => {
     const response = await axios.get(fileUrl, { responseType: 'arraybuffer' });
     const imageBuffer = Buffer.from(response.data, 'binary');
 
-    if (!images.includes(imageBuffer)) {
-        images.length > 75 ? images.shift() : null;
-        images.push(imageBuffer);  
+    if (!images[msg.chat.id].includes(imageBuffer)) {
+        images[msg.chat.id].length > 75 ? images[msg.chat.id].shift() : null;
+        images[msg.chat.id].push(imageBuffer);  
     }
 }
 
