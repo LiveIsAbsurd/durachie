@@ -75,11 +75,11 @@ bot.onText(/\/dem/, async (msg) => {
         const imageStream = await createDemotivator(images[msg.chat.id][imageIndex], topText, bottomText);
 
         // Отправка изображения
-        await bot.sendPhoto(chatId, imageStream);
+        bot.sendPhoto(chatId, imageStream);
 
         // Отправка в канал, если необходимо
         if (msg.chat.id == "-1001807749316") {
-            await sendToChanel(bot, process.env.chanelId, null, imageStream);
+            sendToChanel(bot, process.env.chanelId, null, imageStream);
         }
 
         // Обновление массива изображений
