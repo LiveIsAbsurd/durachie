@@ -82,7 +82,7 @@ bot.onText(/\/dem/, async (msg) => {
     msg.chat.id == "-1001807749316" ? sendToChanel(bot, process.env.chanelId, null, imageStream) : null;
 
     if (Math.random() < 0.1) {
-        images[msg.chat.id].length > 2000 ? images[msg.chat.id].shift() : null;
+        images[msg.chat.id].length > 75 ? images[msg.chat.id].shift() : null;
         images[msg.chat.id].push(imageStream);
     }
 });
