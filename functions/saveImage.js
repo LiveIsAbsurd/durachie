@@ -1,6 +1,8 @@
 const axios = require("axios");
 
 const saveImage = async (msg, bot, images) => {
+    !images[msg.chat.id] ? images[msg.chat.id] = [] : null;
+    
     const photoId = msg.photo[msg.photo.length - 1].file_id;
 
     // Получаем информацию о файле

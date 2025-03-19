@@ -22,6 +22,7 @@ bot.on('message', (msg, match) => {
     let reply = msg.reply_to_message;
 
     !wordBase[msg.chat.id] ? wordBase[msg.chat.id] = [] : null;
+    console.log(!wordBase[msg.chat.id]);
 
     if (match.type === 'text') {
 
