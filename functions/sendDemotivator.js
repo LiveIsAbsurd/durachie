@@ -25,7 +25,7 @@ const sendDemotivator = async (bot, msg, images, randomMess) => {
 
         } catch (error) {
             console.error("Ошибка при выполнении команды /dem:", error);
-            bot.sendMessage(chatId, "Произошла ошибка при создании демотиватора :(");
+            //bot.sendMessage(chatId, "Произошла ошибка при создании демотиватора :(");
         }
 }
 
