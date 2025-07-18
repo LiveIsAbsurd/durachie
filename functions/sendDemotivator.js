@@ -29,4 +29,4 @@ const sendDemotivator = async (bot, msg, images, randomMess) => {
         }
 }
 
-export default sendDemotivator;
+module.exports = sendDemotivator;
