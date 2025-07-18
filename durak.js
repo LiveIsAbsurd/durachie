@@ -4,6 +4,7 @@ const TelegramBot = require("node-telegram-bot-api");
 const createDemotivator = require("./functions/createDemotivator");
 const saveImage = require("./functions/saveImage");
 const sendToChanel = require("./functions/sendToChannel");
+const sendDemotivator = require('./functions/sendDemotivator');
 
 const bot = new TelegramBot(process.env.botAPI, { polling: { interval: 1000 } });
 
@@ -45,6 +46,10 @@ bot.on('message', (msg, match) => {
         if (sendTrig) {
             replyBot ? bot.sendMessage(msg.chat.id, randomMess(msg.chat.id), {reply_to_message_id: msg.message_id}) : bot.sendMessage(msg.chat.id, randomMess(msg.chat.id));
         }
+
+        if (msg.text.includes("мем")) {
+            sendDemotivator(bot, msg, images, randomMess);
+        }
     }
 })
 
@@ -59,33 +64,8 @@ bot.onText(/\/vote/, (msg) => {
     bot.sendPoll(msg.chat.id, randomMess(msg.chat.id), options, { is_anonymous: false });
 })
 
-bot.onText(/\/dem/, async (msg) => {
-    const chatId = msg.chat.id;
-
-    if (!images[msg.chat.id]) {
-        return;
-    }
-
-    try {
-        const imageIndex = Math.floor(Math.random() * images[msg.chat.id].length);
-        const topText = randomMess(msg.chat.id);
-        const bottomText = randomMess(msg.chat.id);
-
-        // Создание демотиватора
-        const imageStream = await createDemotivator(images[msg.chat.id][imageIndex], topText, bottomText);
-
-        // Отправка изображения
-        bot.sendPhoto(chatId, imageStream);
-
-        // Отправка в канал, если необходимо
-        if (msg.chat.id == "-1001807749316") {
-            sendToChanel(bot, process.env.chanelId, null, imageStream);
-        }
-
-    } catch (error) {
-        console.error("Ошибка при выполнении команды /dem:", error);
-        bot.sendMessage(chatId, "Произошла ошибка при создании демотиватора :(");
-    }
+bot.onText(/\/dem/, (msg) => {
+    sendDemotivator(bot, msg, images, randomMess);
 });
 
 bot.onText(/\/joke/, (msg) => {
