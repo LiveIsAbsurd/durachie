@@ -1,4 +1,4 @@
-import createDemotivator from "./createDemotivator";
+const createDemotivator = require('./createDemotivator');
 
 const sendDemotivator = async (bot, msg, images, randomMess) => {
         const chatId = msg.chat.id;
