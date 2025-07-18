@@ -1,6 +1,6 @@
 const createDemotivator = require('./createDemotivator');
 
-const sendDemotivator = async (bot, msg, images, randomMess) => {
+const sendDemotivator = async (bot, msg, images, randomMess, sendToChanel) => {
         const chatId = msg.chat.id;
 
         if (!images[msg.chat.id]) {

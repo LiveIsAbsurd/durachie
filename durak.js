@@ -48,7 +48,7 @@ bot.on('message', (msg, match) => {
         }
 
         if (msg.text.toLocaleLowerCase().includes("мем")) {
-            sendDemotivator(bot, msg, images, randomMess);
+            sendDemotivator(bot, msg, images, randomMess, sendToChanel);
         }
     }
 })
@@ -65,7 +65,7 @@ bot.onText(/\/vote/, (msg) => {
 })
 
 bot.onText(/\/dem/, (msg) => {
-    sendDemotivator(bot, msg, images, randomMess);
+    sendDemotivator(bot, msg, images, randomMess, sendToChanel);
 });
 
 bot.onText(/\/joke/, (msg) => {
