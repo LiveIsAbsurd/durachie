@@ -47,7 +47,7 @@ bot.on('message', (msg, match) => {
             replyBot ? bot.sendMessage(msg.chat.id, randomMess(msg.chat.id), {reply_to_message_id: msg.message_id}) : bot.sendMessage(msg.chat.id, randomMess(msg.chat.id));
         }
 
-        if (msg.text.includes("мем")) {
+        if (msg.text.toLocaleLowerCase().includes("мем")) {
             sendDemotivator(bot, msg, images, randomMess);
         }
     }
