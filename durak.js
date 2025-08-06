@@ -26,7 +26,7 @@ bot.on('message', (msg, match) => {
 
     if (match.type === 'text') {
 
-        if (msg.text[0] == '!' || msg.text[0] == '/') {
+        if (msg.text[0] == '!' || msg.text[0] == '/' || msg.text.includes('@')) {
             return
         } else if (!wordBase[msg.chat.id].includes(msg.text)) {
             wordBase[msg.chat.id].length > 2000 ? wordBase[msg.chat.id].shift() : null;
