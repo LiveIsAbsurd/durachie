@@ -1,4 +1,5 @@
-require('dotenv').config();
+import dotenv from 'dotenv';
+dotenv.config();
 import fs from "fs";
 import TelegramBot from "node-telegram-bot-api";
 import createDemotivator from "./functions/createDemotivator.js";
