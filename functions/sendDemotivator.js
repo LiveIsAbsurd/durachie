@@ -1,4 +1,4 @@
-import createDemotivator from './createDemotivator';
+import createDemotivator from './createDemotivator.js';
 
 const sendDemotivator = async (bot, msg, images, randomMess, sendToChanel) => {
         const chatId = msg.chat.id;
