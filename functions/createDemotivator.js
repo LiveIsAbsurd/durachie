@@ -1,4 +1,4 @@
-import { createCanvas, loadImage, registerFont } from ('canvas');
+import { createCanvas, loadImage, registerFont } from 'canvas';
 
 registerFont('./Lobster-Regular.ttf', { family: 'Lobster' });
 
