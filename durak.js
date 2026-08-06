@@ -1,10 +1,10 @@
 require('dotenv').config();
-const fs = require("fs");
-const TelegramBot = require("node-telegram-bot-api");
-const createDemotivator = require("./functions/createDemotivator");
-const saveImage = require("./functions/saveImage");
-const sendToChanel = require("./functions/sendToChannel");
-const sendDemotivator = require('./functions/sendDemotivator');
+import fs from "fs";
+import TelegramBot from "node-telegram-bot-api";
+import createDemotivator from "./functions/createDemotivator";
+import saveImage from "./functions/saveImage";
+import sendToChanel from "./functions/sendToChannel";
+import sendDemotivator from './functions/sendDemotivator';
 
 const bot = new TelegramBot(process.env.botAPI, { polling: { interval: 1000 } });
 

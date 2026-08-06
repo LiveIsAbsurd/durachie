@@ -1,4 +1,4 @@
-const axios = require("axios");
+import axios from "axios";
 
 const saveImage = async (msg, bot, images) => {
     !images[msg.chat.id] ? images[msg.chat.id] = [] : null;
@@ -19,4 +19,4 @@ const saveImage = async (msg, bot, images) => {
     }
 }
 
-module.exports = saveImage;
+export default saveImage;

@@ -1,4 +1,4 @@
-const { createCanvas, loadImage, registerFont } = require('canvas');
+import { createCanvas, loadImage, registerFont } from ('canvas');
 
 registerFont('./Lobster-Regular.ttf', { family: 'Lobster' });
 
@@ -52,4 +52,4 @@ async function createDemotivator(imagePath, topText, bottomText) {
     return canvas.createPNGStream();
 }
 
-module.exports = createDemotivator;
+export default createDemotivator;

@@ -6,4 +6,4 @@ const sendToChanel = (bot, chanelId, message, photo) => {
     }
 }
 
-module.exports = sendToChanel;
+export default sendToChanel;

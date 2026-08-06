@@ -1,4 +1,4 @@
-const createDemotivator = require('./createDemotivator');
+import createDemotivator from './createDemotivator';
 
 const sendDemotivator = async (bot, msg, images, randomMess, sendToChanel) => {
         const chatId = msg.chat.id;
@@ -29,4 +29,4 @@ const sendDemotivator = async (bot, msg, images, randomMess, sendToChanel) => {
         }
 }
 
-module.exports = sendDemotivator;
+export default sendDemotivator;
