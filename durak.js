@@ -76,7 +76,7 @@ bot.onText(/\/joke/, (msg) => {
     }
 
     bot.sendMessage(msg.chat.id, text);
-    msg.chat.id == "-1001807749316" ? sendToChanel(bot, process.env.chanelId, text, null) : null;
+    msg.chat.id == "-1002691894090" ? sendToChanel(bot, process.env.chanelId, text, null) : null;
 });
 
 bot.onText(/\/addJoke/, (msg) => {
