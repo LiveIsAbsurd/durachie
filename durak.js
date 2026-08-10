@@ -42,7 +42,8 @@ bot.on('message', (msg, match) => {
 
     if (match.type == 'text' && msg.text[0] != '/') {
         const replyBot = reply?.from.id == "7770648727";
-        const sendTrig = replyBot || Math.random() < 0.01;
+        // const sendTrig = replyBot || Math.random() < 0.01;
+        const sendTrig = replyBot;
 
         if (sendTrig) {
             replyBot ? bot.sendMessage(msg.chat.id, randomMess(msg.chat.id), {reply_to_message_id: msg.message_id}) : bot.sendMessage(msg.chat.id, randomMess(msg.chat.id));
