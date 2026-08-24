@@ -20,6 +20,27 @@ const randomMess = (id) => {
    return wordBase[id][Math.floor(Math.random() * wordBase[id].length)];
 }
 
+// ===== ОБРАБОТКА ОШИБОК API =====
+bot.on('error', (error) => {
+    console.error('❌ Ошибка бота:', error.message);
+});
+
+// Обработка ошибок при отправке сообщений
+const originalSendMessage = bot.sendMessage.bind(bot);
+bot.sendMessage = async function(chatId, text, options) {
+    try {
+        return await originalSendMessage(chatId, text, options);
+    } catch (error) {
+        if (error.response?.body?.error_code === 429) {
+            const retryAfter = error.response.body.parameters?.retry_after || 5;
+            console.log(`⏳ 429 при sendMessage, ждем ${retryAfter} сек`);
+            await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
+            return await originalSendMessage(chatId, text, options);
+        }
+        throw error;
+    }
+};
+
 bot.on('message', (msg, match) => {
     let reply = msg.reply_to_message;
 
