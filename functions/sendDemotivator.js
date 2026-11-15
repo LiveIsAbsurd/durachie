@@ -9,8 +9,8 @@ const sendDemotivator = async (bot, msg, images, randomMess, sendToChanel) => {
 
         try {
             const imageIndex = Math.floor(Math.random() * images[msg.chat.id].length);
-            const topText = randomMess(msg.chat.id);
-            const bottomText = randomMess(msg.chat.id);
+            const topText = randomMess(msg.chat.id) || " ";
+            const bottomText = randomMess(msg.chat.id) || " ";
 
             // Создание демотиватора
             const imageStream = await createDemotivator(images[msg.chat.id][imageIndex], topText, bottomText);

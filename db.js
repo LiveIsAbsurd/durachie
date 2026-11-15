@@ -34,6 +34,11 @@ class DurakDatabase {
   }
 
   initTables() {
+    try {
+      this.db.exec('PRAGMA journal_mode = WAL;');
+      this.db.exec('PRAGMA synchronous = NORMAL;');
+    } catch {}
+
     // 1. Таблица сообщений чатов
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS messages (
@@ -193,27 +198,43 @@ class DurakDatabase {
     }
   }
 
-  // Получить случайное сообщение (для режима 1 и демотиваторов)
-  getRandomMessage(chatId = null) {
+  // Получить случайное сообщение (СТРОГО с изоляцией по чату)
+  getRandomMessage(chatId) {
+    if (!chatId) return null;
     try {
-      let row;
-      if (chatId) {
-        row = this.db.prepare(`
-          SELECT text FROM messages
-          WHERE chat_id = ?
-          ORDER BY RANDOM() LIMIT 1
-        `).get(String(chatId));
-      }
-      if (!row) {
-        row = this.db.prepare(`
-          SELECT text FROM messages
-          ORDER BY RANDOM() LIMIT 1
-        `).get();
-      }
-      return row ? row.text : 'Привет!';
+      const row = this.db.prepare(`
+        SELECT text FROM messages
+        WHERE chat_id = ?
+        ORDER BY RANDOM() LIMIT 1
+      `).get(String(chatId));
+      return row ? row.text : null;
     } catch (err) {
       console.error('Ошибка getRandomMessage:', err.message);
-      return 'Привет!';
+      return null;
+    }
+  }
+
+  // Получить список всех уникальных chat_id в базе
+  getChatIds() {
+    try {
+      return this.db.prepare('SELECT DISTINCT chat_id FROM messages').all().map(r => r.chat_id);
+    } catch {
+      return [];
+    }
+  }
+
+  // Получить сводную статистику по всем чатам
+  getChatsStats() {
+    try {
+      return this.db.prepare(`
+        SELECT chat_id, count(*) as count, max(created_at) as last_activity
+        FROM messages
+        GROUP BY chat_id
+        ORDER BY count DESC
+      `).all();
+    } catch (err) {
+      console.error('Ошибка getChatsStats:', err.message);
+      return [];
     }
   }
 
