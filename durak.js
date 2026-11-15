@@ -7,25 +7,131 @@ import saveImage from "./functions/saveImage.js";
 import sendToChanel from "./functions/sendToChannel.js";
 import sendDemotivator from './functions/sendDemotivator.js';
 
-const bot = new TelegramBot(process.env.botAPI, { polling: { interval: 1000 } });
+// База данных и модули искусственного интеллекта
+import DurakDatabase from './db.js';
+import MarkovChain from './markov.js';
+import MessageClassifier, { categorizeMessage } from './classifier.js';
+import TopicModeler from './topicModeler.js';
 
-let wordBase = JSON.parse(fs.readFileSync("../durakBase/wordBase.json", "UTF-8"));
-let jokeBase = JSON.parse(fs.readFileSync('../durakBase/jokeBase.json', "UTF-8"),null, 2);
+const ADMIN_ID = "261749882"; // ID владельца для управления режимами и обучением
+
+// Инициализация базы данных SQLite
+const db = new DurakDatabase('./durak.db');
+
+// Инициализация моделей ИИ и динамического моделирования тем
+const markov = new MarkovChain(2);
+const classifier = new MessageClassifier();
+const topicModeler = new TopicModeler();
+
+// Функция обучения моделей на всех накопленных сообщениях
+function trainModels() {
+    const allMessages = db.getAllMessages();
+    if (allMessages.length === 0) {
+        console.log('⚠️ База сообщений пока пуста, обучение отложено.');
+        return { count: 0, markov: { keys: 0, entries: 0, starters: 0 }, timeMs: 0, ramMb: 0, categories: [] };
+    }
+
+    const startTime = Date.now();
+    console.log(`\n📚 Обучение моделей на ${allMessages.length} сообщениях из базы данных...`);
+
+    // 1. Динамическое обнаружение тем из сообщений (Low-RAM Graph Co-occurrence)
+    console.log('🔍 Анализирую лексику и выявляю динамические темы чата...');
+    const discoveredCategories = topicModeler.discoverCategories(allMessages);
+    console.log(`🏷️ Найдено динамических тем: ${discoveredCategories.length} (${discoveredCategories.map(c => c.name).join(', ')})`);
+
+    // 2. Обучаем цепь Маркова
+    markov.train(allMessages);
+    const markovStats = markov.getStats();
+    console.log(`✅ Цепь Маркова обучена: ${markovStats.keys} ключей, ${markovStats.entries} связей, ${markovStats.starters} стартовых фраз`);
+
+    // 3. Подсчёт сообщений по темам и сохранение в SQLite
+    const catCounts = {};
+    const trainingData = allMessages.map(text => {
+        const cat = categorizeMessage(text, topicModeler);
+        catCounts[cat] = (catCounts[cat] || 0) + 1;
+        return { text, category: cat };
+    });
+
+    for (const cat of discoveredCategories) {
+        cat.messageCount = catCounts[cat.name] || 0;
+    }
+    db.saveCategories(discoveredCategories);
+
+    // 4. Обучаем классификатор brain.js на динамических темах
+    classifier.train(trainingData);
+
+    const timeMs = Date.now() - startTime;
+    const mem = process.memoryUsage();
+    const ramMb = Math.round(mem.rss / 1024 / 1024);
+    console.log(`💾 RAM: ${ramMb} МБ (время обучения: ${(timeMs / 1000).toFixed(2)} сек)\n`);
+
+    return {
+        count: allMessages.length,
+        markov: markovStats,
+        categories: discoveredCategories,
+        timeMs,
+        ramMb,
+    };
+}
+
+// Запуск первичного обучения при старте бота на имеющихся данных
+try {
+    trainModels();
+} catch (err) {
+    console.error('Ошибка первичного обучения:', err.message);
+}
+
+// Получить текущий режим чата (1 - случайные реплики, 2 - нейросеть)
+function getChatMode(chatId) {
+    const chatMode = db.getSetting(`mode_${chatId}`, null);
+    if (chatMode) return chatMode;
+    return db.getSetting('mode', '1'); // По умолчанию Режим 1 (как сейчас)
+}
+
+// Генерация ответа в режиме нейросети (Марков + классификатор)
+function generateNeuralResponse(input, chatId) {
+    // 1. Классификация темы входного сообщения
+    const classification = classifier.classify(input);
+
+    // 2. Генерация вариантов через цепь Маркова
+    const variants = markov.generateMultiple(5, 25, input);
+
+    let replyText = null;
+    if (variants && variants.length > 0) {
+        // Выбираем вариант с оптимальной длиной (~10 слов)
+        variants.sort((a, b) => {
+            const aLen = a.split(' ').length;
+            const bLen = b.split(' ').length;
+            return Math.abs(aLen - 10) - Math.abs(bLen - 10);
+        });
+        replyText = variants[0];
+    }
+
+    // Если Марков не смог построить цепочку от редких слов, берём случайную фразу из базы
+    if (!replyText) {
+        replyText = randomMess(chatId);
+    }
+
+    return { text: replyText, classification };
+}
+
+// Функция получения случайного сообщения (для режима 1, демотиваторов и шуток)
+const randomMess = (id) => {
+    return db.getRandomMessage(id);
+};
+
+const bot = new TelegramBot(process.env.botAPI || "DUMMY_TOKEN_FOR_DEV", { polling: { interval: 1000 } });
+
 let images = {};
-
 const minOpt = 2;
 const maxOpt = 10;
-
-const randomMess = (id) => {
-   return wordBase[id][Math.floor(Math.random() * wordBase[id].length)];
-}
 
 // ===== ОБРАБОТКА ОШИБОК API =====
 bot.on('error', (error) => {
     console.error('❌ Ошибка бота:', error.message);
 });
 
-// Обработка ошибок при отправке сообщений
+// Обработка ошибок при отправке сообщений (rate limit 429)
 const originalSendMessage = bot.sendMessage.bind(bot);
 bot.sendMessage = async function(chatId, text, options) {
     try {
@@ -41,88 +147,306 @@ bot.sendMessage = async function(chatId, text, options) {
     }
 };
 
+// ===== ОСНОВНОЙ ОБРАБОТЧИК СООБЩЕНИЙ =====
 bot.on('message', (msg, match) => {
     let reply = msg.reply_to_message;
 
-    !wordBase[msg.chat.id] ? wordBase[msg.chat.id] = [] : null;
-
+    // 1. Сохранение сообщений в базу (работает всегда: и в режиме 1, и в режиме 2)
     if (match.type === 'text') {
-
         if (msg.text[0] == '!' || msg.text[0] == '/' || msg.text.includes('@')) {
-            return
-        } else if (!wordBase[msg.chat.id].includes(msg.text)) {
-            wordBase[msg.chat.id].length > 2000 ? wordBase[msg.chat.id].shift() : null;
-            wordBase[msg.chat.id].push(msg.text);  
+            return;
         }
 
+        // Сохраняем в SQLite
+        const isNew = db.addMessage(msg.chat.id, msg.text);
+        if (isNew) {
+            // Обучаем Маркова на лету новому предложению
+            markov.learn(msg.text);
+        }
     } else if (match.type === 'photo') {
         saveImage(msg, bot, images);
     } else {
         return;
     }
 
+    // 2. Ответ бота в чат
     if (match.type == 'text' && msg.text[0] != '/') {
-        const replyBot = reply?.from.id == "7770648727";
+        const replyBot = reply?.from.id == "7770648727" || reply?.from.is_bot;
         const sendTrig = replyBot || Math.random() < 0.07;
 
         if (sendTrig) {
-            replyBot ? bot.sendMessage(msg.chat.id, randomMess(msg.chat.id), {reply_to_message_id: msg.message_id}) : bot.sendMessage(msg.chat.id, randomMess(msg.chat.id));
+            const mode = getChatMode(msg.chat.id);
+            let replyText;
+
+            if (mode === '2') {
+                // РЕЖИМ 2: Нейросеть (Марков + классификатор brain.js)
+                const neuralResult = generateNeuralResponse(msg.text, msg.chat.id);
+                replyText = neuralResult.text;
+            } else {
+                // РЕЖИМ 1: Как сейчас (случайная цитата из базы)
+                replyText = randomMess(msg.chat.id);
+            }
+
+            if (replyText) {
+                if (replyBot) {
+                    bot.sendMessage(msg.chat.id, replyText, { reply_to_message_id: msg.message_id });
+                } else {
+                    bot.sendMessage(msg.chat.id, replyText);
+                }
+            }
         }
 
-        if (msg.text.toLocaleLowerCase().includes("мем")) {
+        if (msg.text.toLowerCase().includes("мем")) {
             sendDemotivator(bot, msg, images, randomMess, sendToChanel);
         }
     }
-})
+});
 
+// ===== УПРАВЛЕНИЕ РЕЖИМАМИ (Только для ADMIN_ID: 261749882) =====
+bot.onText(/\/mode(?:\s+(.*))?/, async (msg, match) => {
+    const senderId = String(msg.from.id);
+    if (senderId !== ADMIN_ID) {
+        return; // Доступно только владельцу
+    }
+
+    const arg = match[1] ? match[1].trim() : '';
+    const currentMode = getChatMode(msg.chat.id);
+    const globalMode = db.getSetting('mode', '1');
+
+    if (arg === '1') {
+        db.setSetting('mode', '1');
+        db.setSetting(`mode_${msg.chat.id}`, '1');
+        return bot.sendMessage(
+            msg.chat.id,
+            '⚙️ <b>Режим переключен: РЕЖИМ 1 (Классический)</b>\n' +
+            'Бот отвечает случайными фразами из базы чата.',
+            { parse_mode: 'HTML' }
+        );
+    }
+
+    if (arg === '2') {
+        db.setSetting('mode', '2');
+        db.setSetting(`mode_${msg.chat.id}`, '2');
+        return bot.sendMessage(
+            msg.chat.id,
+            '⚙️ <b>Режим переключен: РЕЖИМ 2 (Нейросеть)</b>\n' +
+            'Бот использует цепь Маркова и нейросеть brain.js для генерации связных ответов.',
+            { parse_mode: 'HTML' }
+        );
+    }
+
+    // Справка и статус режимов
+    const count = db.getMessageCount();
+    const chatCount = db.getMessageCount(msg.chat.id);
+    const mStats = markov.getStats();
+    const modeName = currentMode === '2'
+        ? '🤖 РЕЖИМ 2 (Нейросеть: Марков + brain.js)'
+        : '🎲 РЕЖИМ 1 (Классический: случайные фразы)';
+
+    return bot.sendMessage(
+        msg.chat.id,
+        `📊 <b>Настройки режимов бота:</b>\n\n` +
+        `• Режим в этом чате: <b>${modeName}</b>\n` +
+        `• Общий режим по умолчанию: <b>Режим ${globalMode}</b>\n\n` +
+        `💾 <b>База данных SQLite:</b>\n` +
+        `• Фраз в этом чате: <b>${chatCount}</b>\n` +
+        `• Всего фраз в базе: <b>${count}</b>\n` +
+        `• Ключей Маркова: <b>${mStats.keys}</b> (${mStats.entries} связей)\n` +
+        `• Нейросеть обучена: <b>${classifier.trained ? '✅ Да' : '❌ Нет'}</b>\n\n` +
+        `<b>Команды переключения (только для тебя):</b>\n` +
+        `<code>/mode 1</code> — включить обычный режим\n` +
+        `<code>/mode 2</code> — включить режим нейросети\n` +
+        `<code>/train</code> — переобучить модель на всех новых фразах`,
+        { parse_mode: 'HTML' }
+    );
+});
+
+// ===== КОМАНДА ПЕРЕОБУЧЕНИЯ (Только для ADMIN_ID: 261749882) =====
+bot.onText(/\/(train|retrain)/, async (msg) => {
+    const senderId = String(msg.from.id);
+    if (senderId !== ADMIN_ID) {
+        return;
+    }
+
+    const totalMsgs = db.getMessageCount();
+    if (totalMsgs < 5) {
+        return bot.sendMessage(
+            msg.chat.id,
+            `⚠️ В базе слишком мало фраз (${totalMsgs}). Пообщайтесь в чате, чтобы бот собрал больше сообщений.`
+        );
+    }
+
+    await bot.sendMessage(msg.chat.id, `⏳ Начинаю переобучение на ${totalMsgs} сообщениях...`);
+
+    try {
+        const stats = trainModels();
+        const catNames = stats.categories.map(c => `<code>${c.name}</code>`).join(', ');
+        bot.sendMessage(
+            msg.chat.id,
+            `✅ <b>Переобучение завершено!</b>\n\n` +
+            `• Обработано сообщений: <b>${stats.count}</b>\n` +
+            `• Динамических тем найдено: <b>${stats.categories.length}</b> (${catNames})\n` +
+            `• Ключей Маркова: <b>${stats.markov.keys}</b>\n` +
+            `• Связей в цепи: <b>${stats.markov.entries}</b>\n` +
+            `• Время обучения: <b>${(stats.timeMs / 1000).toFixed(2)} сек</b>\n` +
+            `• Потребление RAM: <b>${stats.ramMb} МБ</b>\n\n` +
+            `Посмотреть темы: <code>/categories</code>`,
+            { parse_mode: 'HTML' }
+        );
+    } catch (err) {
+        bot.sendMessage(msg.chat.id, `❌ Ошибка при переобучении: ${err.message}`);
+    }
+});
+
+// ===== ПРОСМОТР ДИНАМИЧЕСКИХ ТЕМ (/categories, /topics) =====
+bot.onText(/\/(categories|topics)/, (msg) => {
+    const cats = db.getCategories();
+    if (!cats || cats.length === 0) {
+        return bot.sendMessage(
+            msg.chat.id,
+            'ℹ️ <b>Динамические категории ещё не сформированы.</b>\n' +
+            'Пообщайтесь в чате и запустите <code>/train</code>, чтобы бот автоматически выявил темы.',
+            { parse_mode: 'HTML' }
+        );
+    }
+
+    let text = `🏷️ <b>ДИНАМИЧЕСКИЕ КАТЕГОРИИ ЧАТА (${cats.length})</b>\n\n`;
+    text += `<i>Бот сам группирует частые темы на основе сообщений участников:</i>\n\n`;
+
+    cats.forEach((cat, idx) => {
+        const kws = cat.keywords.slice(0, 6).join(', ');
+        const count = cat.messageCount ? `${cat.messageCount} сообщ.` : 'новая тема';
+        text += `${idx + 1}. <b>${cat.name}</b> (${count})\n`;
+        text += `   Ключевые слова: <code>${kws}</code>\n\n`;
+    });
+
+    text += `💡 <i>Категории адаптируются и дополняются при каждом переобучении (<code>/train</code>).</i>`;
+
+    bot.sendMessage(msg.chat.id, text, { parse_mode: 'HTML' });
+});
+
+// ===== КОМАНДА СТАТИСТИКИ И МЕТРИК (/stats, /metrics) =====
+bot.onText(/\/(stats|metrics)/, (msg) => {
+    const formatUptime = (seconds) => {
+        const d = Math.floor(seconds / (3600 * 24));
+        const h = Math.floor((seconds % (3600 * 24)) / 3600);
+        const m = Math.floor((seconds % 3600) / 60);
+        const s = Math.floor(seconds % 60);
+        const parts = [];
+        if (d > 0) parts.push(`${d} дн.`);
+        if (h > 0 || d > 0) parts.push(`${h} ч.`);
+        if (m > 0 || h > 0 || d > 0) parts.push(`${m} мин.`);
+        parts.push(`${s} сек.`);
+        return parts.join(' ');
+    };
+
+    const fmt = (n) => (n ?? 0).toLocaleString('ru-RU');
+
+    // Метрики базы данных
+    const totalMsgs = db.getMessageCount();
+    const chatMsgs = db.getMessageCount(msg.chat.id);
+    const totalJokes = db.getAllJokes().length;
+    let dbSizeStr = 'неизвестно';
+    try {
+        if (fs.existsSync('./durak.db')) {
+            const bytes = fs.statSync('./durak.db').size;
+            dbSizeStr = (bytes / (1024 * 1024)).toFixed(2) + ' МБ';
+        }
+    } catch {}
+
+    // Метрики Маркова
+    const mStats = markov.getStats();
+
+    // Метрики классификатора
+    const isClassifierTrained = classifier.trained;
+    const catCount = classifier.categories.length;
+    const catList = catCount > 0 ? classifier.categories.join(', ') : 'нет';
+    const vocabSize = classifier.vocabulary ? classifier.vocabulary.size : 0;
+
+    // Режим работы
+    const currentMode = getChatMode(msg.chat.id);
+    const globalMode = db.getSetting('mode', '1');
+    const modeDesc = currentMode === '2'
+        ? '🤖 <b>Режим 2 (Нейросеть)</b>'
+        : '🎲 <b>Режим 1 (Классический)</b>';
+
+    // Системные ресурсы
+    const mem = process.memoryUsage();
+    const rssMb = (mem.rss / 1024 / 1024).toFixed(1);
+    const heapUsedMb = (mem.heapUsed / 1024 / 1024).toFixed(1);
+    const heapTotalMb = (mem.heapTotal / 1024 / 1024).toFixed(1);
+    const uptime = formatUptime(process.uptime());
+
+    const response =
+        `📊 <b>СТАТИСТИКА И МЕТРИКИ БОТА</b>\n\n` +
+        `⚙️ <b>Режим работы:</b>\n` +
+        `• В этом чате: ${modeDesc}\n` +
+        `• По умолчанию: <b>Режим ${globalMode}</b>\n\n` +
+        `💾 <b>База данных (SQLite):</b>\n` +
+        `• Фраз в этом чате: <b>${fmt(chatMsgs)}</b>\n` +
+        `• Всего фраз в базе: <b>${fmt(totalMsgs)}</b>\n` +
+        `• Анекдотов в базе: <b>${fmt(totalJokes)}</b>\n` +
+        `• Размер файла базы: <b>${dbSizeStr}</b>\n\n` +
+        `🔗 <b>Цепь Маркова:</b>\n` +
+        `• Ключей (пар слов): <b>${fmt(mStats.keys)}</b>\n` +
+        `• Переходов (связей): <b>${fmt(mStats.entries)}</b>\n` +
+        `• Стартовых фраз: <b>${fmt(mStats.starters)}</b>\n\n` +
+        `🧠 <b>Классификатор (brain.js):</b>\n` +
+        `• Статус обучения: <b>${isClassifierTrained ? '✅ Обучен' : '❌ Не обучен'}</b>\n` +
+        `• Словарь нейросети: <b>${fmt(vocabSize)} слов</b>\n` +
+        `• Категорий: <b>${catCount}</b> (<code>${catList}</code>)\n\n` +
+        `💻 <b>Система и ресурсы:</b>\n` +
+        `• Время работы (Uptime): <b>${uptime}</b>\n` +
+        `• Память (RSS): <b>${rssMb} МБ</b>\n` +
+        `• Память (Heap): <b>${heapUsedMb} / ${heapTotalMb} МБ</b>\n` +
+        `• Node.js: <b>${process.version}</b>`;
+
+    bot.sendMessage(msg.chat.id, response, { parse_mode: 'HTML' });
+});
+
+// ===== ОСТАЛЬНЫЕ КОМАНДЫ БОТА =====
 bot.onText(/\/vote/, (msg) => {
     const optCount = Math.floor(Math.random() * (maxOpt - minOpt + 1)) + minOpt;
     let options = [];
-    
+
     for (let i = 0; i < optCount; i++) {
         options.push(randomMess(msg.chat.id));
     }
 
     bot.sendPoll(msg.chat.id, randomMess(msg.chat.id), options, { is_anonymous: false });
-})
+});
 
 bot.onText(/\/dem/, (msg) => {
     sendDemotivator(bot, msg, images, randomMess, sendToChanel);
 });
 
 bot.onText(/\/joke/, (msg) => {
-    let text = jokeBase[Math.floor(Math.random() * jokeBase.length)];
+    let text = db.getRandomJoke();
     while (text.includes("joke")) {
         text = text.replace("joke", randomMess(msg.chat.id));
     }
 
     bot.sendMessage(msg.chat.id, text);
-    msg.chat.id == "-1002691894090" ? sendToChanel(bot, process.env.chanelId, text, null) : null;
+    if (msg.chat.id == "-1002691894090") {
+        sendToChanel(bot, process.env.chanelId, text, null);
+    }
 });
 
 bot.onText(/\/addJoke/, (msg) => {
-    if (msg.from.id != "261749882") {
+    if (String(msg.from.id) !== ADMIN_ID) {
         return;
     }
 
-    let text = msg.text.replace('/addJoke', "");
-
-    jokeBase.push(text);
-
-    fs.writeFileSync('../durakBase/jokeBase.json', JSON.stringify(jokeBase, null, 2), "UTF-8", (err) => {
-        if (err) {
-            console.log(err);
-        }
-    });
-
+    let text = msg.text.replace('/addJoke', "").trim();
+    if (text) {
+        db.addJoke(text);
+        bot.sendMessage(msg.chat.id, "✅ Шутка успешно добавлена в базу данных!");
+    }
 });
 
+// Корректное завершение работы
 process.on("SIGINT", async () => {
-    fs.writeFileSync("../durakBase/wordBase.json", JSON.stringify(wordBase), "UTF-8", (err) => {
-        if (err) {
-            console.log(err);
-        }
-    });
-
+    console.log("Завершение работы бота, закрытие базы данных...");
+    db.close();
     process.exit(0);
-})
+});
